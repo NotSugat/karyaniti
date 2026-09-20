@@ -14,6 +14,8 @@ vercel --prod
 
 The Vercel API serves Devanagari and Romanized Nepali search, category filters, latest cases, and full case text from the archive.
 
+The archive filename number is used for the official Nepal Law Journal URL. The displayed case number is parsed from the document's `निर्णय नं.` heading.
+
 ## Run locally
 
 ```bash

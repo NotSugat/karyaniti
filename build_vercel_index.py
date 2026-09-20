@@ -10,6 +10,7 @@ ROOT = Path(__file__).parent
 ARCHIVE = ROOT / "data" / "nkp_cases_with_rit.zip"
 DB = ROOT / "data" / "karyaniti.db"
 DEVANAGARI_WORD = re.compile(r"[\u0900-\u097F]+")
+NIRNAYA_NUMBER = re.compile(r"निर्णय\s*नं\.?\s*([०-९0-9]+)")
 
 
 def devanagari_key(word: str) -> str:
@@ -19,6 +20,11 @@ def devanagari_key(word: str) -> str:
 def searchable_text(text: str) -> str:
     encoded = DEVANAGARI_WORD.sub(lambda match: devanagari_key(match.group()), text)
     return romanize(text) + " " + encoded
+
+
+def nirnaya_number(text: str, fallback: str) -> str:
+    match = NIRNAYA_NUMBER.search(text[:2000])
+    return match.group(1) if match else fallback
 
 
 def build() -> None:
@@ -32,6 +38,7 @@ def build() -> None:
             case_id TEXT NOT NULL,
             case_type INTEGER NOT NULL,
             type_label TEXT NOT NULL,
+            nirnaya_no TEXT NOT NULL,
             path TEXT NOT NULL UNIQUE,
             preview TEXT NOT NULL
         );
@@ -49,8 +56,8 @@ def build() -> None:
             case_id = match.group(2)
             text = archive.read(name).decode("utf-8", errors="replace")
             cursor = con.execute(
-                "INSERT INTO cases VALUES (?, ?, ?, ?, ?)",
-                (case_id, case_type, TYPE_LABELS.get(case_type, "Unmapped"), name, preview(text)),
+                "INSERT INTO cases VALUES (?, ?, ?, ?, ?, ?)",
+                (case_id, case_type, TYPE_LABELS.get(case_type, "Unmapped"), nirnaya_number(text, case_id), name, preview(text)),
             )
             con.execute(
                 "INSERT INTO cases_fts(rowid, content) VALUES (?, ?)",

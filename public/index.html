@@ -24,6 +24,10 @@
             </select>
             <button type="submit">Search</button>
           </div>
+          <div class="typing-tools">
+            <button id="unicode-toggle" class="unicode-toggle" type="button" aria-pressed="true">नेपाली preview on</button>
+            <p id="unicode-preview" class="unicode-preview" aria-live="polite"></p>
+          </div>
         </form>
       </section>
 
@@ -38,6 +42,7 @@
       <button id="close-dialog" class="close" type="button" aria-label="Close case">×</button>
       <p id="dialog-type" class="eyebrow"></p>
       <h2 id="dialog-title"></h2>
+      <a id="official-link" class="official-link" target="_blank" rel="noopener">View official case</a>
       <pre id="dialog-text"></pre>
     </dialog>
     <script src="/app.js" defer></script>
