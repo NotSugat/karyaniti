@@ -48,6 +48,8 @@ button:hover { background: #0a5048; }
 .tag { color: var(--accent-dark); font-weight: 700; }
 .result-card h3 { font-size: 23px; }
 .result-card p { display: -webkit-box; overflow: hidden; min-height: 76px; margin: 12px 0 16px; color: #4f5d64; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.result-card .case-subtitle { display: block; min-height: 0; margin: 8px 0 0; color: var(--ink); font-size: 17px; font-weight: 700; }
+.result-card .case-preview { margin-top: 8px; }
 .card-actions { display: flex; align-items: center; gap: 12px; }
 .result-card button { font: 700 13px Arial, sans-serif; }
 .official-link { color: var(--green); font: 700 13px Arial, sans-serif; text-decoration: none; }

@@ -161,8 +161,9 @@ async function search() {
   for (const item of data.results) {
     const card = document.createElement("article");
     card.className = "result-card";
-    card.innerHTML = '<div class="card-top"><span class="tag">' + item.label + '</span><span>Case ' + item.nirnaya_no + '</span></div><h3>Case ' + item.nirnaya_no + '</h3><p></p><div class="card-actions"><button type="button">Read case</button><a class="official-link" href="' + item.official_url + '" target="_blank" rel="noopener">Official case</a></div>';
-    renderHighlightedText(card.querySelector("p"), item.snippet, item.highlight_terms);
+    card.innerHTML = '<div class="card-top"><span class="tag">' + item.label + '</span><span>Case ' + item.nirnaya_no + '</span></div><h3>Case ' + item.nirnaya_no + '</h3><p class="case-subtitle"></p><p class="case-preview"></p><div class="card-actions"><button type="button">Read case</button><a class="official-link" href="' + item.official_url + '" target="_blank" rel="noopener">Official case</a></div>';
+    card.querySelector(".case-subtitle").textContent = item.subject || "";
+    renderHighlightedText(card.querySelector(".case-preview"), item.snippet, item.highlight_terms);
     card.querySelector("button").addEventListener("click", () => openCase(item));
     results.append(card);
   }
