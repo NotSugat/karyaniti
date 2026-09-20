@@ -18,16 +18,19 @@
         <form id="search-form">
           <label for="query">Search the case text</label>
           <div class="search-row">
-            <input id="query" name="q" type="search" placeholder="Try a case number, name, or legal phrase" autocomplete="off" />
+            <div class="input-shell">
+              <div class="mode-toggle" role="group" aria-label="Typing mode">
+                <button id="english-mode" type="button" aria-pressed="true">English</button>
+                <button id="nepali-mode" type="button" aria-pressed="false">नेपाली</button>
+              </div>
+              <input id="query" name="q" type="search" placeholder="Try a case number, name, or legal phrase" autocomplete="off" spellcheck="false" />
+            </div>
             <select id="type" name="type" aria-label="Filter by case type">
               <option value="">All case types</option>
             </select>
             <button type="submit">Search</button>
           </div>
-          <div class="typing-tools">
-            <button id="unicode-toggle" class="unicode-toggle" type="button" aria-pressed="true">नेपाली preview on</button>
-            <p id="unicode-preview" class="unicode-preview" aria-live="polite"></p>
-          </div>
+          <p id="unicode-preview" class="unicode-preview" aria-live="polite"></p>
         </form>
       </section>
 

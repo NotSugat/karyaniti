@@ -10,8 +10,9 @@ const dialogType = document.querySelector("#dialog-type");
 const dialogTitle = document.querySelector("#dialog-title");
 const dialogText = document.querySelector("#dialog-text");
 const officialLink = document.querySelector("#official-link");
-const unicodeToggle = document.querySelector("#unicode-toggle");
 const unicodePreview = document.querySelector("#unicode-preview");
+const englishMode = document.querySelector("#english-mode");
+const nepaliMode = document.querySelector("#nepali-mode");
 
 const transliterationAliases = {
   samandha: "सम्बन्ध",
@@ -61,23 +62,72 @@ function transliterateWord(value) {
   return output;
 }
 
-let unicodePreviewEnabled = true;
+function transliterateText(value) {
+  return value.split(/(\s+)/).map((part) => /^\s+$/.test(part) ? part : transliterateWord(part)).join("");
+}
+
+let inputMode = "english";
+let nepaliSource = "";
 
 function updateUnicodePreview() {
-  if (!unicodePreviewEnabled || !query.value.trim()) {
+  if (inputMode !== "english" || !query.value.trim()) {
     unicodePreview.textContent = "";
     return;
   }
-  unicodePreview.textContent = query.value.split(/(\s+)/).map((part) => /^\s+$/.test(part) ? part : transliterateWord(part)).join("");
+  unicodePreview.textContent = transliterateText(query.value);
 }
 
-unicodeToggle.addEventListener("click", () => {
-  unicodePreviewEnabled = !unicodePreviewEnabled;
-  unicodeToggle.textContent = unicodePreviewEnabled ? "नेपाली preview on" : "नेपाली preview off";
-  unicodeToggle.setAttribute("aria-pressed", String(unicodePreviewEnabled));
+function updateModeButtons() {
+  englishMode.setAttribute("aria-pressed", String(inputMode === "english"));
+  nepaliMode.setAttribute("aria-pressed", String(inputMode === "nepali"));
+  englishMode.classList.toggle("active", inputMode === "english");
+  nepaliMode.classList.toggle("active", inputMode === "nepali");
+}
+
+function setInputMode(mode) {
+  if (mode === inputMode) return;
+  if (mode === "nepali") {
+    nepaliSource = query.value;
+    query.value = transliterateText(nepaliSource);
+  } else {
+    query.value = nepaliSource;
+  }
+  inputMode = mode;
+  updateModeButtons();
   updateUnicodePreview();
+  query.focus();
+  query.setSelectionRange(query.value.length, query.value.length);
+}
+
+englishMode.addEventListener("click", () => setInputMode("english"));
+nepaliMode.addEventListener("click", () => setInputMode("nepali"));
+
+function insertNepaliInput(value) {
+  nepaliSource += value;
+  query.value = transliterateText(nepaliSource);
+  query.setSelectionRange(query.value.length, query.value.length);
+}
+
+query.addEventListener("keydown", (event) => {
+  if (inputMode !== "nepali") return;
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    nepaliSource = nepaliSource.slice(0, -1);
+    query.value = transliterateText(nepaliSource);
+    query.setSelectionRange(query.value.length, query.value.length);
+  } else if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    insertNepaliInput(event.key);
+  }
+});
+
+query.addEventListener("paste", (event) => {
+  if (inputMode !== "nepali") return;
+  event.preventDefault();
+  insertNepaliInput(event.clipboardData.getData("text"));
 });
 query.addEventListener("input", updateUnicodePreview);
+updateModeButtons();
 
 async function loadStats() {
   const response = await fetch("/api/stats");
