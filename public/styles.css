@@ -48,11 +48,24 @@ button:hover { background: #0a5048; }
 .tag { color: var(--accent-dark); font-weight: 700; }
 .result-card h3 { font-size: 23px; }
 .result-card p { display: -webkit-box; overflow: hidden; min-height: 76px; margin: 12px 0 16px; color: #4f5d64; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.result-card .case-subtitle { display: block; min-height: 0; margin: 8px 0 0; color: var(--ink); font-size: 17px; font-weight: 700; }
+.result-card .case-preview { margin-top: 8px; }
 .card-actions { display: flex; align-items: center; gap: 12px; }
 .result-card button { font: 700 13px Arial, sans-serif; }
 .official-link { color: var(--green); font: 700 13px Arial, sans-serif; text-decoration: none; }
 .official-link:hover { text-decoration: underline; }
 .empty { padding: 36px; border: 1px dashed var(--line); border-radius: 15px; color: var(--muted); text-align: center; }
+.feedback-fab { position: fixed; right: 22px; bottom: 22px; z-index: 5; padding: 11px 16px; border-radius: 999px; box-shadow: 0 8px 24px #071c1633; font: 700 13px Arial, sans-serif; }
+.feedback-dialog { width: min(460px, calc(100% - 28px)); }
+.feedback-dialog h2 { margin-bottom: 24px; }
+.feedback-dialog label { margin-top: 14px; }
+.feedback-dialog label span { color: var(--muted); font-weight: 400; }
+.feedback-dialog select, .feedback-dialog input, .feedback-dialog textarea { width: 100%; }
+.feedback-dialog textarea { resize: vertical; }
+.feedback-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.feedback-cancel { color: var(--ink); background: #edf1ee; }
+.feedback-cancel:hover { background: #dce5e0; }
+.feedback-status { min-height: 1.6em; margin: 12px 0 0; color: var(--muted); font: 13px Arial, sans-serif; }
 dialog { width: min(960px, calc(100% - 28px)); max-height: 88vh; padding: 34px; border: 0; border-radius: 18px; color: var(--ink); box-shadow: 0 24px 80px #071c1680; }
 dialog::backdrop { background: #071c1666; }
 .close { position: absolute; top: 14px; right: 14px; padding: 2px 10px; font: 26px Arial, sans-serif; background: transparent; color: var(--muted); }
@@ -67,4 +80,5 @@ mark { padding: 0 .12em; border-radius: 3px; background: #ffe36b; color: inherit
   .results-head { display: block; }
   #result-count { display: block; margin-top: 8px; }
   dialog { padding: 26px 20px; }
+  .feedback-fab { right: 14px; bottom: 14px; }
 }

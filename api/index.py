@@ -23,6 +23,7 @@ ROMAN_ALIASES = {
 }
 DEVANAGARI_WORD = re.compile(r"[\u0900-\u097F]+")
 QUERY_TOKEN = re.compile(r"[A-Za-z0-9_]+|[\u0900-\u097F]+")
+CASE_SUBJECT = re.compile(r"निर्णय\s*नं\.?\s*[०-९0-9]+\s*-\s*(.*?)(?=\s+भाग:|\s+फैसला\s+मिति|$)")
 
 
 def official_url(case_id):
@@ -35,6 +36,11 @@ def archive_name(case_type, case_id):
 
 def read_case(archive, case_type, case_id):
     return archive.read(archive_name(case_type, case_id)).decode("utf-8", errors="replace")
+
+
+def case_subject(text):
+    match = CASE_SUBJECT.search(text[:2000])
+    return re.sub(r"\s+", " ", match.group(1)).strip(" .:") if match else ""
 
 
 def highlight_terms(text, query):
@@ -77,6 +83,7 @@ def empty_result(row):
         "type": row[1],
         "label": row[2],
         "nirnaya_no": row[3],
+        "subject": case_subject(row[5]),
         "official_url": official_url(row[0]),
         "snippet": row[5],
         "highlight_terms": [],
@@ -126,6 +133,7 @@ def search(query, case_type):
                 "type": row[1],
                 "label": row[2],
                 "nirnaya_no": row[3],
+                "subject": case_subject(row[5]),
                 "official_url": official_url(row[0]),
                 "snippet": snippet,
                 "highlight_terms": terms,
@@ -180,7 +188,7 @@ class handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "Case not found"}, 404)
                 return
             nirnaya_no = row[0] if row else case_id
-            self.send_json({"id": case_id, "type": int(raw_type), "label": TYPE_LABELS[int(raw_type)], "nirnaya_no": nirnaya_no, "official_url": official_url(case_id), "text": text, "highlight_terms": highlight_terms(text, query)})
+            self.send_json({"id": case_id, "type": int(raw_type), "label": TYPE_LABELS[int(raw_type)], "nirnaya_no": nirnaya_no, "subject": case_subject(text), "official_url": official_url(case_id), "text": text, "highlight_terms": highlight_terms(text, query)})
             return
 
         self.send_error(404)

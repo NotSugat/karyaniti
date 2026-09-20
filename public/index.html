@@ -48,6 +48,30 @@
       <a id="official-link" class="official-link" target="_blank" rel="noopener">View official case</a>
       <pre id="dialog-text"></pre>
     </dialog>
+    <button id="feedback-open" class="feedback-fab" type="button">Feedback</button>
+    <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
+      <button id="feedback-close" class="close" type="button" aria-label="Close feedback">×</button>
+      <p class="eyebrow">HELP US IMPROVE</p>
+      <h2 id="feedback-title">Send feedback</h2>
+      <form id="feedback-form">
+        <label for="feedback-kind">Type</label>
+        <select id="feedback-kind" name="kind">
+          <option value="suggestion">Suggestion</option>
+          <option value="bug">Something is not working</option>
+          <option value="question">Question</option>
+          <option value="other">Other</option>
+        </select>
+        <label for="feedback-message">Message</label>
+        <textarea id="feedback-message" name="message" rows="5" required minlength="3" maxlength="5000" placeholder="What should we improve?"></textarea>
+        <label for="feedback-email">Email <span>(optional)</span></label>
+        <input id="feedback-email" name="email" type="email" maxlength="254" placeholder="If you want a reply" />
+        <div class="feedback-actions">
+          <button id="feedback-cancel" class="feedback-cancel" type="button">Cancel</button>
+          <button type="submit">Send feedback</button>
+        </div>
+        <p id="feedback-status" class="feedback-status" aria-live="polite"></p>
+      </form>
+    </dialog>
     <script src="/app.js" defer></script>
   </body>
 </html>

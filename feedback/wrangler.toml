@@ -1,0 +1,8 @@
+name = "karyaniti-feedback"
+main = "src/index.js"
+compatibility_date = "2026-09-20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "karyaniti-feedback"
+database_id = "2940f2c3-deec-401d-95cc-d6b1c1338c7e"

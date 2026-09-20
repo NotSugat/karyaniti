@@ -13,6 +13,11 @@ const officialLink = document.querySelector("#official-link");
 const unicodePreview = document.querySelector("#unicode-preview");
 const englishMode = document.querySelector("#english-mode");
 const nepaliMode = document.querySelector("#nepali-mode");
+const feedbackEndpoint = "https://karyaniti-feedback.sugatsujakhu.workers.dev/feedback";
+const feedbackOpen = document.querySelector("#feedback-open");
+const feedbackDialog = document.querySelector("#feedback-dialog");
+const feedbackForm = document.querySelector("#feedback-form");
+const feedbackStatus = document.querySelector("#feedback-status");
 
 const transliterationAliases = {
   samandha: "सम्बन्ध",
@@ -161,8 +166,9 @@ async function search() {
   for (const item of data.results) {
     const card = document.createElement("article");
     card.className = "result-card";
-    card.innerHTML = '<div class="card-top"><span class="tag">' + item.label + '</span><span>Case ' + item.nirnaya_no + '</span></div><h3>Case ' + item.nirnaya_no + '</h3><p></p><div class="card-actions"><button type="button">Read case</button><a class="official-link" href="' + item.official_url + '" target="_blank" rel="noopener">Official case</a></div>';
-    renderHighlightedText(card.querySelector("p"), item.snippet, item.highlight_terms);
+    card.innerHTML = '<div class="card-top"><span class="tag">' + item.label + '</span><span>Case ' + item.nirnaya_no + '</span></div><h3>Case ' + item.nirnaya_no + '</h3><p class="case-subtitle"></p><p class="case-preview"></p><div class="card-actions"><button type="button">Read case</button><a class="official-link" href="' + item.official_url + '" target="_blank" rel="noopener">Official case</a></div>';
+    card.querySelector(".case-subtitle").textContent = item.subject || "";
+    renderHighlightedText(card.querySelector(".case-preview"), item.snippet, item.highlight_terms);
     card.querySelector("button").addEventListener("click", () => openCase(item));
     results.append(card);
   }
@@ -211,5 +217,35 @@ form.addEventListener("submit", (event) => {
   search().catch(() => { results.innerHTML = '<p class="empty">Search is unavailable. Build the index and restart the server.</p>'; });
 });
 document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
+feedbackOpen.addEventListener("click", () => feedbackDialog.showModal());
+document.querySelector("#feedback-close").addEventListener("click", () => feedbackDialog.close());
+document.querySelector("#feedback-cancel").addEventListener("click", () => feedbackDialog.close());
+feedbackForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const submit = feedbackForm.querySelector("button[type=submit]");
+  submit.disabled = true;
+  feedbackStatus.textContent = "Sending…";
+  const values = new FormData(feedbackForm);
+  try {
+    const response = await fetch(feedbackEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: values.get("kind"),
+        message: values.get("message"),
+        email: values.get("email"),
+        page_url: location.href,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not send feedback.");
+    feedbackForm.reset();
+    feedbackStatus.textContent = "Thank you. Your feedback was saved.";
+  } catch (error) {
+    feedbackStatus.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
 loadStats().catch(() => { stats.innerHTML = '<p class="empty">Corpus stats unavailable. Build the index first.</p>'; });
 search().catch(() => { results.innerHTML = '<p class="empty">Cases are unavailable. Build the index and restart the server.</p>'; });
