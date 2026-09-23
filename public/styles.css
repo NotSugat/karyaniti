@@ -43,6 +43,8 @@ button:hover { background: #0a5048; }
 .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
 #result-count { color: var(--muted); font: 13px Arial, sans-serif; }
 .results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.pagination { display: flex; justify-content: center; gap: 10px; margin: 24px 0; }
+.pagination button { font: 700 13px Arial, sans-serif; }
 .result-card { padding: 20px; border: 1px solid var(--line); border-radius: 15px; background: var(--card); }
 .card-top { display: flex; justify-content: space-between; margin-bottom: 14px; color: var(--muted); font: 12px Arial, sans-serif; }
 .tag { color: var(--accent-dark); font-weight: 700; }

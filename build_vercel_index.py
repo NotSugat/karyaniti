@@ -3,7 +3,7 @@ import re
 import sqlite3
 from zipfile import ZipFile
 
-from build_index import TYPE_LABELS, preview, romanize
+from build_index import TYPE_LABELS, case_subject, preview, romanize
 
 
 ROOT = Path(__file__).parent
@@ -39,6 +39,8 @@ def build() -> None:
             case_type INTEGER NOT NULL,
             type_label TEXT NOT NULL,
             nirnaya_no TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            subject_roman TEXT NOT NULL,
             path TEXT NOT NULL UNIQUE,
             preview TEXT NOT NULL
         );
@@ -55,9 +57,10 @@ def build() -> None:
             case_type = int(match.group(1))
             case_id = match.group(2)
             text = archive.read(name).decode("utf-8", errors="replace")
+            subject = case_subject(text)
             cursor = con.execute(
-                "INSERT INTO cases VALUES (?, ?, ?, ?, ?, ?)",
-                (case_id, case_type, TYPE_LABELS.get(case_type, "Unmapped"), nirnaya_number(text, case_id), name, preview(text)),
+                "INSERT INTO cases VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (case_id, case_type, TYPE_LABELS.get(case_type, "Type " + str(case_type)), nirnaya_number(text, case_id), subject, romanize(subject), name, preview(text)),
             )
             con.execute(
                 "INSERT INTO cases_fts(rowid, content) VALUES (?, ?)",

@@ -8,10 +8,10 @@ CASES = ROOT / "data" / "cases"
 DB = ROOT / "data" / "karyaniti.db"
 TYPE_LABELS = {
     1: "Civil",
-    2: "Unmapped",
-    3: "Writ",
-    4: "Criminal",
-    5: "Special",
+    2: "Government Civil",
+    3: "Criminal",
+    4: "Government Criminal",
+    5: "Writ",
 }
 
 VOWELS = {
@@ -29,6 +29,7 @@ CONSONANTS = {
     "फ": "ph", "ब": "b", "भ": "bh", "म": "m", "य": "y", "र": "r", "ल": "l",
     "व": "v", "श": "sh", "ष": "sh", "स": "s", "ह": "h",
 }
+CASE_SUBJECT = re.compile(r"निर्णय\s*नं\.?\s*[०-९0-9]+\s*-\s*(.*?)(?=\s+भाग:|\s+फैसला\s+मिति|$)")
 
 
 def romanize(text: str) -> str:
@@ -61,6 +62,11 @@ def romanize(text: str) -> str:
     return "".join(output)
 
 
+def case_subject(text: str) -> str:
+    match = CASE_SUBJECT.search(text[:2000])
+    return re.sub(r"\s+", " ", match.group(1)).strip(" .:") if match else ""
+
+
 def preview(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()[:420]
 
@@ -76,7 +82,9 @@ def build() -> None:
             case_type INTEGER NOT NULL,
             type_label TEXT NOT NULL,
             path TEXT NOT NULL UNIQUE,
-            preview TEXT NOT NULL
+            preview TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            subject_roman TEXT NOT NULL
         )
         """
     )
@@ -91,16 +99,17 @@ def build() -> None:
         case_id = path.stem.removeprefix("case_")
         text = path.read_text(encoding="utf-8", errors="replace")
         relative = path.relative_to(CASES).as_posix()
-        rows.append((case_id, case_type, TYPE_LABELS.get(case_type, "Unmapped"), relative, preview(text), text, romanize(text)))
+        subject = case_subject(text)
+        rows.append((case_id, case_type, TYPE_LABELS.get(case_type, "Type " + str(case_type)), relative, preview(text), subject, romanize(subject), text, romanize(text)))
         if len(rows) >= 100:
-            con.executemany("INSERT INTO cases VALUES (?, ?, ?, ?, ?)", (row[:5] for row in rows))
-            con.executemany("INSERT INTO cases_fts(case_id, content, roman_content) VALUES (?, ?, ?)", ((row[0], row[5], row[6]) for row in rows))
+            con.executemany("INSERT INTO cases VALUES (?, ?, ?, ?, ?, ?, ?)", (row[:7] for row in rows))
+            con.executemany("INSERT INTO cases_fts(case_id, content, roman_content) VALUES (?, ?, ?)", ((row[0], row[7], row[8]) for row in rows))
             rows.clear()
             print("indexed", con.execute("SELECT count(*) FROM cases").fetchone()[0], flush=True)
 
     if rows:
-        con.executemany("INSERT INTO cases VALUES (?, ?, ?, ?, ?)", (row[:5] for row in rows))
-        con.executemany("INSERT INTO cases_fts(case_id, content, roman_content) VALUES (?, ?, ?)", ((row[0], row[5], row[6]) for row in rows))
+        con.executemany("INSERT INTO cases VALUES (?, ?, ?, ?, ?, ?, ?)", (row[:7] for row in rows))
+        con.executemany("INSERT INTO cases_fts(case_id, content, roman_content) VALUES (?, ?, ?)", ((row[0], row[7], row[8]) for row in rows))
     con.execute("CREATE INDEX cases_type_idx ON cases(case_type)")
     con.commit()
     con.close()

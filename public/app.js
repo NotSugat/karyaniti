@@ -3,6 +3,7 @@ const query = document.querySelector("#query");
 const type = document.querySelector("#type");
 const stats = document.querySelector("#stats");
 const results = document.querySelector("#results");
+const pagination = document.querySelector("#pagination");
 const resultsTitle = document.querySelector("#results-title");
 const resultCount = document.querySelector("#result-count");
 const dialog = document.querySelector("#case-dialog");
@@ -18,6 +19,12 @@ const feedbackOpen = document.querySelector("#feedback-open");
 const feedbackDialog = document.querySelector("#feedback-dialog");
 const feedbackForm = document.querySelector("#feedback-form");
 const feedbackStatus = document.querySelector("#feedback-status");
+const initialUrl = new URLSearchParams(location.search);
+const initialType = initialUrl.get("type") || "";
+const initialCase = initialUrl.get("case") || "";
+const initialPage = Number.parseInt(initialUrl.get("page"), 10);
+let currentPage = Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1;
+query.value = initialUrl.get("q") || "";
 
 const transliterationAliases = {
   samandha: "सम्बन्ध",
@@ -133,6 +140,7 @@ query.addEventListener("paste", (event) => {
 });
 query.addEventListener("input", updateUnicodePreview);
 updateModeButtons();
+updateUnicodePreview();
 
 async function loadStats() {
   const response = await fetch("/api/stats");
@@ -149,16 +157,67 @@ async function loadStats() {
     type.value = button.dataset.type;
     form.requestSubmit();
   }));
+  if ([...type.options].some((option) => option.value === initialType)) type.value = initialType;
+}
+
+function updateUrl(caseKey = "") {
+  const params = new URLSearchParams();
+  if (query.value.trim()) params.set("q", query.value.trim());
+  if (type.value) params.set("type", type.value);
+  if (currentPage > 1) params.set("page", currentPage);
+  if (caseKey) params.set("case", caseKey);
+  history.pushState(null, "", params.toString() ? "/?" + params : "/");
+}
+
+function clearCaseFromUrl() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("case")) return;
+  params.delete("case");
+  history.replaceState(null, "", params.toString() ? "/?" + params : "/");
+}
+
+function caseFromUrl(value) {
+  const [rawType, id] = value.split(":");
+  const caseType = Number.parseInt(rawType, 10);
+  return Number.isInteger(caseType) && caseType > 0 && /^\d+$/.test(id) ? { type: caseType, id } : null;
+}
+
+function renderPagination(data) {
+  pagination.replaceChildren();
+  if (data.page <= 1 && !data.has_more) return;
+  if (data.page > 1) {
+    const previous = document.createElement("button");
+    previous.type = "button";
+    previous.textContent = "Previous";
+    previous.addEventListener("click", () => {
+      currentPage = data.page - 1;
+      updateUrl();
+      search().catch(() => { results.innerHTML = '<p class="empty">Search is unavailable. Build the index and restart the server.</p>'; });
+    });
+    pagination.append(previous);
+  }
+  if (data.has_more) {
+    const next = document.createElement("button");
+    next.type = "button";
+    next.textContent = "Next";
+    next.addEventListener("click", () => {
+      currentPage = data.page + 1;
+      updateUrl();
+      search().catch(() => { results.innerHTML = '<p class="empty">Search is unavailable. Build the index and restart the server.</p>'; });
+    });
+    pagination.append(next);
+  }
 }
 
 async function search() {
-  const params = new URLSearchParams({ q: query.value, type: type.value });
+  const params = new URLSearchParams({ q: query.value, type: type.value, page: currentPage });
   const response = await fetch("/api/search?" + params);
   const data = await response.json();
   const selectedType = type.value ? type.options[type.selectedIndex].textContent.split(" (")[0] : "";
   resultsTitle.textContent = data.query ? "Results for “" + data.query + "”" : selectedType ? "Latest " + selectedType + " cases" : "Latest cases";
-  resultCount.textContent = data.results.length ? data.query ? data.results.length + " results shown" : data.results.length + " latest cases shown" : "";
+  resultCount.textContent = data.results.length ? (data.page > 1 ? "Page " + data.page + ", " : "") + (data.query ? data.results.length + " results shown" : data.results.length + " latest cases shown") : "";
   results.replaceChildren();
+  renderPagination(data);
   if (!data.results.length) {
     results.innerHTML = data.query ? '<p class="empty">No matching cases found.</p>' : '<p class="empty">No cases found.</p>';
     return;
@@ -167,14 +226,15 @@ async function search() {
     const card = document.createElement("article");
     card.className = "result-card";
     card.innerHTML = '<div class="card-top"><span class="tag">' + item.label + '</span><span>Case ' + item.nirnaya_no + '</span></div><h3>Case ' + item.nirnaya_no + '</h3><p class="case-subtitle"></p><p class="case-preview"></p><div class="card-actions"><button type="button">Read case</button><a class="official-link" href="' + item.official_url + '" target="_blank" rel="noopener">Official case</a></div>';
-    card.querySelector(".case-subtitle").textContent = item.subject || "";
+    renderHighlightedText(card.querySelector(".case-subtitle"), item.subject || "", item.subject_highlight_terms);
     renderHighlightedText(card.querySelector(".case-preview"), item.snippet, item.highlight_terms);
     card.querySelector("button").addEventListener("click", () => openCase(item));
     results.append(card);
   }
 }
 
-async function openCase(item) {
+async function openCase(item, pushUrl = true) {
+  if (pushUrl) updateUrl(item.type + ":" + item.id);
   const response = await fetch("/api/case?type=" + item.type + "&id=" + item.id + "&q=" + encodeURIComponent(query.value));
   const data = await response.json();
   dialogType.textContent = data.label + " case";
@@ -214,9 +274,24 @@ function renderHighlightedText(container, text, terms) {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+  currentPage = 1;
+  updateUrl();
   search().catch(() => { results.innerHTML = '<p class="empty">Search is unavailable. Build the index and restart the server.</p>'; });
 });
 document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", clearCaseFromUrl);
+window.addEventListener("popstate", () => {
+  const params = new URLSearchParams(location.search);
+  query.value = params.get("q") || "";
+  if ([...type.options].some((option) => option.value === params.get("type"))) type.value = params.get("type");
+  const page = Number.parseInt(params.get("page"), 10);
+  currentPage = Number.isInteger(page) && page > 0 ? page : 1;
+  search().then(() => {
+    const item = caseFromUrl(params.get("case") || "");
+    if (item) return openCase(item, false);
+    if (dialog.open) dialog.close();
+  }).catch(() => {});
+});
 feedbackOpen.addEventListener("click", () => feedbackDialog.showModal());
 document.querySelector("#feedback-close").addEventListener("click", () => feedbackDialog.close());
 document.querySelector("#feedback-cancel").addEventListener("click", () => feedbackDialog.close());
@@ -247,5 +322,18 @@ feedbackForm.addEventListener("submit", async (event) => {
     submit.disabled = false;
   }
 });
-loadStats().catch(() => { stats.innerHTML = '<p class="empty">Corpus stats unavailable. Build the index first.</p>'; });
-search().catch(() => { results.innerHTML = '<p class="empty">Cases are unavailable. Build the index and restart the server.</p>'; });
+async function initialize() {
+  try {
+    await loadStats();
+  } catch {
+    stats.innerHTML = '<p class="empty">Corpus stats unavailable. Build the index first.</p>';
+  }
+  try {
+    await search();
+    const item = caseFromUrl(initialCase);
+    if (item) await openCase(item, false);
+  } catch {
+    results.innerHTML = '<p class="empty">Cases are unavailable. Build the index and restart the server.</p>';
+  }
+}
+initialize();

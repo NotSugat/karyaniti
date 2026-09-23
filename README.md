@@ -28,11 +28,12 @@ Open <http://localhost:8000>.
 
 The deployment index is `data/karyaniti.db`; source case text is in `data/nkp_cases_with_rit.zip`.
 
-The case labels follow `glara-annotator/lib/case-types.ts`:
+The case labels follow the official NKP `mudda_type` categories:
 
 - Type 1: Civil
-- Type 3: Writ
-- Type 4: Criminal
-- Type 5: Special
+- Type 2: Government Civil
+- Type 3: Criminal
+- Type 4: Government Criminal
+- Type 5: Writ
 
-The archive contains nine type 2 cases, but the annotator has no type 2 label. Karyaniti keeps them as `Unmapped` so no source cases disappear.
+The GLARA annotator does not label type 2, but Karyaniti keeps these government-civil cases in the search corpus.
