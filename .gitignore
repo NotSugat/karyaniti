@@ -1,4 +1,5 @@
 __pycache__/
 .vercel/
+graphify-out/
 .wrangler/
 feedback/.admin-token
