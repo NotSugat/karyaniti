@@ -1,3 +1,5 @@
+import { setRomanizedNepaliEnabled } from "./nepali-keyboard.mjs";
+
 const form = document.querySelector("#search-form");
 const query = document.querySelector("#query");
 const type = document.querySelector("#type");
@@ -11,7 +13,6 @@ const dialogType = document.querySelector("#dialog-type");
 const dialogTitle = document.querySelector("#dialog-title");
 const dialogText = document.querySelector("#dialog-text");
 const officialLink = document.querySelector("#official-link");
-const unicodePreview = document.querySelector("#unicode-preview");
 const englishMode = document.querySelector("#english-mode");
 const nepaliMode = document.querySelector("#nepali-mode");
 const feedbackEndpoint = "https://karyaniti-feedback.sugatsujakhu.workers.dev/feedback";
@@ -26,68 +27,7 @@ const initialPage = Number.parseInt(initialUrl.get("page"), 10);
 let currentPage = Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1;
 query.value = initialUrl.get("q") || "";
 
-const transliterationAliases = {
-  samandha: "सम्बन्ध",
-  samandh: "सम्बन्ध",
-  sambandha: "सम्बन्ध",
-  samband: "सम्बन्ध",
-  biched: "विच्छेद",
-  bichhed: "विच्छेद",
-  biced: "विच्छेद",
-  jagga: "जग्गा",
-  gharjagga: "घरजग्गा",
-};
-const consonants = {
-  chh: "छ", kh: "ख", gh: "घ", jh: "झ", th: "थ", dh: "ध", ph: "फ", bh: "भ", sh: "श",
-  ng: "ङ", ny: "ञ", ch: "च", k: "क", g: "ग", j: "ज", t: "त", d: "द", n: "न", p: "प",
-  b: "ब", m: "म", y: "य", r: "र", l: "ल", v: "व", s: "स", h: "ह",
-};
-const vowels = { aa: ["आ", "ा"], ii: ["ई", "ी"], uu: ["ऊ", "ू"], ai: ["ऐ", "ै"], au: ["औ", "ौ"], ri: ["ऋ", "ृ"], a: ["अ", ""], i: ["इ", "ि"], u: ["उ", "ु"], e: ["ए", "े"], o: ["ओ", "ो"] };
-
-function transliterateWord(value) {
-  const word = value.toLowerCase();
-  if (transliterationAliases[word]) return transliterationAliases[word];
-  if (!/^[a-z]+$/.test(word)) return value;
-  const consonantKeys = Object.keys(consonants).sort((a, b) => b.length - a.length);
-  const vowelKeys = Object.keys(vowels).sort((a, b) => b.length - a.length);
-  let output = "";
-  let index = 0;
-  while (index < word.length) {
-    const consonant = consonantKeys.find((key) => word.startsWith(key, index));
-    if (consonant) {
-      output += consonants[consonant];
-      index += consonant.length;
-      const vowel = vowelKeys.find((key) => word.startsWith(key, index));
-      if (vowel) {
-        output += vowels[vowel][1];
-        index += vowel.length;
-      } else if (index < word.length) {
-        output += "्";
-      }
-      continue;
-    }
-    const vowel = vowelKeys.find((key) => word.startsWith(key, index));
-    if (!vowel) return value;
-    output += vowels[vowel][0];
-    index += vowel.length;
-  }
-  return output;
-}
-
-function transliterateText(value) {
-  return value.split(/(\s+)/).map((part) => /^\s+$/.test(part) ? part : transliterateWord(part)).join("");
-}
-
 let inputMode = "english";
-let nepaliSource = "";
-
-function updateUnicodePreview() {
-  if (inputMode !== "english" || !query.value.trim()) {
-    unicodePreview.textContent = "";
-    return;
-  }
-  unicodePreview.textContent = transliterateText(query.value);
-}
 
 function updateModeButtons() {
   englishMode.setAttribute("aria-pressed", String(inputMode === "english"));
@@ -98,49 +38,16 @@ function updateModeButtons() {
 
 function setInputMode(mode) {
   if (mode === inputMode) return;
-  if (mode === "nepali") {
-    nepaliSource = query.value;
-    query.value = transliterateText(nepaliSource);
-  } else {
-    query.value = nepaliSource;
-  }
   inputMode = mode;
+  setRomanizedNepaliEnabled(query, mode === "nepali");
   updateModeButtons();
-  updateUnicodePreview();
   query.focus();
-  query.setSelectionRange(query.value.length, query.value.length);
 }
 
 englishMode.addEventListener("click", () => setInputMode("english"));
 nepaliMode.addEventListener("click", () => setInputMode("nepali"));
 
-function insertNepaliInput(value) {
-  nepaliSource += value;
-  query.value = transliterateText(nepaliSource);
-  query.setSelectionRange(query.value.length, query.value.length);
-}
-
-query.addEventListener("keydown", (event) => {
-  if (inputMode !== "nepali") return;
-  if (event.key === "Backspace") {
-    event.preventDefault();
-    nepaliSource = nepaliSource.slice(0, -1);
-    query.value = transliterateText(nepaliSource);
-    query.setSelectionRange(query.value.length, query.value.length);
-  } else if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    event.preventDefault();
-    insertNepaliInput(event.key);
-  }
-});
-
-query.addEventListener("paste", (event) => {
-  if (inputMode !== "nepali") return;
-  event.preventDefault();
-  insertNepaliInput(event.clipboardData.getData("text"));
-});
-query.addEventListener("input", updateUnicodePreview);
 updateModeButtons();
-updateUnicodePreview();
 
 async function loadStats() {
   const response = await fetch("/api/stats");
