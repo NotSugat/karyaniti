@@ -19,10 +19,12 @@ The archive filename number is used for the official Nepal Law Journal URL. The 
 ## Run locally
 
 ```bash
-vercel dev
+python3 dev.py
 ```
 
 Open <http://localhost:8000>.
+
+This local runner serves the same SQLite case index through `api/index.py`. Production still uses the Vercel deployment above; the runner does not change the production API or data setup.
 
 ## Data
 
