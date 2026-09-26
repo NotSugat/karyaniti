@@ -43,7 +43,9 @@ def highlight_terms(text, query):
         return []
     if any("a" <= char.lower() <= "z" for char in query):
         wanted = {ROMAN_ALIASES.get(token.lower(), token.lower()) for token in tokens}
-        return sorted({word for word in DEVANAGARI_WORD.findall(text) if any(term in romanize(word).lower() for term in wanted)}, key=len, reverse=True)
+        literal = {token for token in tokens if re.search(re.escape(token), text, re.IGNORECASE)}
+        romanized = {word for word in DEVANAGARI_WORD.findall(text) if any(term in romanize(word).lower() for term in wanted)}
+        return sorted(literal | romanized, key=len, reverse=True)
     return [token for token in tokens if token in text]
 
 
@@ -54,6 +56,7 @@ def first_match(text, query):
     if any("a" <= char.lower() <= "z" for char in query):
         wanted = {ROMAN_ALIASES.get(token.lower(), token.lower()) for token in tokens}
         positions = [match.start() for match in DEVANAGARI_WORD.finditer(text) if any(term in romanize(match.group()).lower() for term in wanted)]
+        positions.extend(match.start() for token in tokens if (match := re.search(re.escape(token), text, re.IGNORECASE)))
     else:
         positions = [position for token in tokens if (position := text.find(token)) >= 0]
     return min(positions) if positions else -1
